@@ -1,4 +1,4 @@
-Date,TimeOfAcc,AccLocation,NatureAccident,ClassificationOfAccident,Causes,RoadFeature,RoadCondition,IntersectionTypeControl,WeatherCondition,VehicleResponsible,Fatal,Grevious,Minor,Injured,NumAnimalsKilled,HelpAmbulancePatrol,Remarks
+Date,TimeOfAcc,AccLocation,NatureAccident,ClassificationOfAccident,Causes,RoadFeature,RoadCondition,IntersectionTypeControl,WeatherCondition,VehicleResponsible,Fatal,Grevious,Minor,Injured,NumAnimalsKilled,HelpProvidedByAmbulancePatrol,Remarks
 9/6/2015,09:00 AM,Ch. 69+5006,2,2,2,2,1,9,1,One Diesel Truck collapsed,0,2,1,0,0,Petrol Vehicle,
 9/5/2014,07:18 AM,72+500,7,1,2,2,3,9,1,Lorry & Scorpio,2,0,0,0,0,Ambulance,
 9/10/2014,08:50 AM,20+250 LHS,4,-,3,3,1,9,1,LCV (KA02 AD 4041) HIT CAR (KA 19 Z 8477),0,0,0,0,0,Petrol Vehicle,NO PROPERTY DAMAGES. INFORMED KEY PERSONS.
