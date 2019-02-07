@@ -4,7 +4,23 @@
 #3. Identify top 5 important features for variable Accident type(variable C in the data set)
 
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
+
+from sklearn.model_selection import train_test_split
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.feature_selection import f_classif
+
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import classification_report
+
 
 data = pd.read_csv('NHAIAccidentData.csv',dtype={})
 print (data.shape)
@@ -31,6 +47,7 @@ newAccidentTimeCols = data["TimeOfAcc"].str.split(" ", n = 1, expand = True)
 data['TimeOfAccNumeric']=newAccidentTimeCols[0]
 data['TimeOfAccAMPM']=newAccidentTimeCols[1]
 data=data.drop(['TimeOfAcc'],axis=1)
+data=data.drop(['TimeOfAccNumeric'],axis=1)
 print(data.shape)
 
 #encode AM & PM time of acccident
@@ -39,25 +56,104 @@ data['Encoded_AccidentTimeMorningEvening']=labelEncoder.fit_transform(data['Time
 data=data.drop(['TimeOfAccAMPM'],axis=1)
 print(data.shape)
 
-#Convert Vehicle Responsible into encoded values
-data['Encoded_VehicleResponsible'] = labelEncoder.fit_transform(data['VehicleResponsible'])
+#Convert Vehicle Responsible into encoded values--FEEDBACK
+#data['Encoded_VehicleResponsible'] = labelEncoder.fit_transform(data['VehicleResponsible'])
+#data=data.drop(['VehicleResponsible'],axis=1)
+#print(data.shape)
 
-data.to_csv('FormattedNHAIAccidentsData.csv')
+#Encode Vehicles Involved with a custom logic
+data.loc [data['VehicleResponsible'].str.contains('lorry',case=False), 'Encoded_VehicleResponsible']='0'
+data.loc [data['VehicleResponsible'].str.contains('truck',case=False), 'Encoded_VehicleResponsible']='0'
+data.loc [data['VehicleResponsible'].str.contains('car',case=False), 'Encoded_VehicleResponsible']='1'
+data.loc [data['VehicleResponsible'].str.contains('bus',case=False), 'Encoded_VehicleResponsible']='0'
+data.loc [data['VehicleResponsible'].str.contains('motor cycle',case=False), 'Encoded_VehicleResponsible']='2'
+data.loc [data['VehicleResponsible'].str.contains('two wheeler',case=False), 'Encoded_VehicleResponsible']='2'
+data.loc [data['VehicleResponsible'].str.contains('bike',case=False), 'Encoded_VehicleResponsible']='2'
+data.loc [data['VehicleResponsible'].str.contains('unknown',case=False), 'Encoded_VehicleResponsible']='3'
+data.loc [data['VehicleResponsible'].str.contains('lcv',case=False), 'Encoded_VehicleResponsible']='1'
+data.loc [data['VehicleResponsible'].str.contains('tipper',case=False), 'Encoded_VehicleResponsible']='1'
+data.loc [data['VehicleResponsible'].str.contains('matador',case=False), 'Encoded_VehicleResponsible']='1'
+data.loc [data['VehicleResponsible'] =='', 'Encoded_VehicleResponsible']='4'
 
+data=data.drop(['VehicleResponsible'],axis=1)
+print(data.shape)
 
-#Read column 3 which is about 'ClassificationOfAccident' as class variable
-#Y=data.iloc[:,4:5]
+#Where Accident Classification is  '-' encode it to some value say 5
+data.loc[data['ClassificationOfAccident']=='-', 'ClassificationOfAccident'] = '6'
+
+#Remove the remakrs column
+data=data.drop(['Remarks'],axis=1)
+
+#Remove the Accidents location column
+data=data.drop(['AccLocation'],axis=1)
+
+# dropping null value columns to avoid errors 
+#data.loc[data['Causes']=='-', 'Causes'] = 'NaN'
+data = data[~data['Causes'].str.contains('-')]
+#data.dropna(inplace = True) 
+
+#After run 1 this feature was found to have least impact
+data=data.drop(['Grevious'],axis=1)
+
+#After run 2 this feature was found to have least impact
+data=data.drop(['Minor'],axis=1)
+
 #Y1 =  Y.drop(Y[Y['ClassificationOfAccident']=='-'].index)
 #print (Y1['ClassificationOfAccident'].value_counts())
 
-#some of the class variables are blank, check the count
+data.to_csv('FormattedNHAIAccidentsData.csv')
 
-#Remove class variable from X
+#Read column 3 which is about 'ClassificationOfAccident' as class variable
+Y=data['ClassificationOfAccident']
 X=data.drop(['ClassificationOfAccident'],axis=1)
-print (X.shape)
 
-#Print each column of the dataframe
-i=1
-while i<17:
-    print (X.iloc[:,i-1:i])
-    i=i+1
+data.to_csv('FeaturesData.csv')
+
+################################################
+############# Feature Selection#################
+################################################
+
+print ("**** Model performance before feature selection ******")
+train_x, test_x, train_y, test_y = train_test_split(X,Y,random_state=1)
+
+#initialize a Random forest classifier with 
+# 1000 decision trees or estimators
+# criteria as entropy, 
+# max depth of decision trees as 10
+# max features in each decision tree be selected automatically
+rf = RandomForestClassifier(n_estimators=1000,
+        max_depth=10, 
+        max_features='auto', 
+        bootstrap=True,
+        oob_score=True,
+        random_state=1)
+
+#fit the data        
+rf.fit(train_x, train_y)
+
+#print the feature importance - tbd
+print ('Feature Importance is ',rf.feature_importances_)
+
+#print the oob-score (out of box features error score)
+print ('Out of box features score is ',rf.oob_score_)
+
+#do a prediction on the test X data set
+predicted_y = rf.predict(test_x)
+
+#errors = abs(predicted_y-test_y)
+#print ('Mean absolute error (MAE) ', round(np.mean(errors),2))
+
+#print the confusion matrix
+confusion_matrix = confusion_matrix(test_y, predicted_y)
+print (confusion_matrix)
+
+print ('Accuracy score is',accuracy_score(test_y, predicted_y))
+
+print ('Recall score is', recall_score(test_y, predicted_y, average='weighted'))
+
+print ('Precision store is', precision_score(test_y, predicted_y, average='weighted'))
+
+print ("F1 score is", f1_score(test_y, predicted_y, average='weighted'))
+
+#print the classification report
+print (classification_report(test_y, predicted_y))
