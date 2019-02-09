@@ -1,6 +1,6 @@
 This is a python implementation to classify accidents related data from NHAI for bangalore.
 
- Main python file is ***nhai.py***, you can execute that to see the classifier running. Classification prediction is ***83%+***  Output from run is as follows:
+ Main python file is ***Classifier.py***, you can execute that to see the classifier running. Classification prediction is ***83%+***  Output from run is as follows:
 
   
 
