@@ -5,7 +5,16 @@
 
 import pandas as pd
 import numpy as np
+
+import VehiclesDataPreprocessing as vdp
+import AccidentDateDataPreprocessing as adp
+import HelpProvidedDataPreprocessing as hdp
+import AccidentTimeDataPreprocessing as atdp
+import DataPreProcessingUtils as dpu
+import PrintClassifierPerformance as pcp
+
 from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import SelectKBest
@@ -14,92 +23,48 @@ from sklearn.feature_selection import f_classif
 
 from sklearn.ensemble import RandomForestClassifier
 
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import recall_score
-from sklearn.metrics import precision_score
-from sklearn.metrics import f1_score
-from sklearn.metrics import classification_report
-
-
 data = pd.read_csv('NHAIAccidentData.csv',dtype={})
-print (data.shape)
+print ('Data shape before pre-processing-',data.shape)
 
-#Convert the Accident Date column into Day, Month and Year column
-accidentDate=pd.to_datetime(data['Date'])
-data['AccYear']=accidentDate.dt.year
-data['AccMonth']=accidentDate.dt.month
-data['AccDay']=accidentDate.dt.day
-data=data.drop(['Date'],axis=1)
-print (data.shape)
-
-#Encode HelpProvidedByPoliceOrAmbulance
-labelEncoder = LabelEncoder()
-helpProvidedBy = data['HelpProvidedByAmbulancePatrol']
-encoded_HelpProvidedBy = labelEncoder.fit_transform(helpProvidedBy)
-data['Encoded_HelpProvidedByPoliceAmbulance']=encoded_HelpProvidedBy
-data=data.drop(['HelpProvidedByAmbulancePatrol'],axis=1)
-print (data.shape)
-
-#From the AccTime column create another column to show if the time was in AM or PM
-# new data frame with split value columns 
-newAccidentTimeCols = data["TimeOfAcc"].str.split(" ", n = 1, expand = True) 
-data['TimeOfAccNumeric']=newAccidentTimeCols[0]
-data['TimeOfAccAMPM']=newAccidentTimeCols[1]
-data=data.drop(['TimeOfAcc'],axis=1)
-data=data.drop(['TimeOfAccNumeric'],axis=1)
-print(data.shape)
-
-#encode AM & PM time of acccident
-labelEncoder = LabelEncoder()
-data['Encoded_AccidentTimeMorningEvening']=labelEncoder.fit_transform(data['TimeOfAccAMPM'])
-data=data.drop(['TimeOfAccAMPM'],axis=1)
-print(data.shape)
-
-#Convert Vehicle Responsible into encoded values--FEEDBACK
-#data['Encoded_VehicleResponsible'] = labelEncoder.fit_transform(data['VehicleResponsible'])
-#data=data.drop(['VehicleResponsible'],axis=1)
-#print(data.shape)
-
-#Encode Vehicles Involved with a custom logic
-data.loc [data['VehicleResponsible'].str.contains('lorry',case=False), 'Encoded_VehicleResponsible']='0'
-data.loc [data['VehicleResponsible'].str.contains('truck',case=False), 'Encoded_VehicleResponsible']='0'
-data.loc [data['VehicleResponsible'].str.contains('car',case=False), 'Encoded_VehicleResponsible']='1'
-data.loc [data['VehicleResponsible'].str.contains('bus',case=False), 'Encoded_VehicleResponsible']='0'
-data.loc [data['VehicleResponsible'].str.contains('motor cycle',case=False), 'Encoded_VehicleResponsible']='2'
-data.loc [data['VehicleResponsible'].str.contains('two wheeler',case=False), 'Encoded_VehicleResponsible']='2'
-data.loc [data['VehicleResponsible'].str.contains('bike',case=False), 'Encoded_VehicleResponsible']='2'
-data.loc [data['VehicleResponsible'].str.contains('unknown',case=False), 'Encoded_VehicleResponsible']='3'
-data.loc [data['VehicleResponsible'].str.contains('lcv',case=False), 'Encoded_VehicleResponsible']='1'
-data.loc [data['VehicleResponsible'].str.contains('tipper',case=False), 'Encoded_VehicleResponsible']='1'
-data.loc [data['VehicleResponsible'].str.contains('matador',case=False), 'Encoded_VehicleResponsible']='1'
-data.loc [data['VehicleResponsible'] =='', 'Encoded_VehicleResponsible']='4'
-
-data=data.drop(['VehicleResponsible'],axis=1)
-print(data.shape)
+data = adp.preProcessAccidentDateData(data)
+data = hdp.helpProvidedDataPreProcessing(data)
+data = atdp.accidentTimePreProcessing(data)
+data = vdp.preProcessResponsibleVehiclesData(data)
 
 #Where Accident Classification is  '-' encode it to some value say 5
 data.loc[data['ClassificationOfAccident']=='-', 'ClassificationOfAccident'] = '6'
 
-#Remove the remakrs column
-data=data.drop(['Remarks'],axis=1)
+data = dpu.removeUnrequiredFeature(data, 'Remarks')
+data = dpu.removeUnrequiredFeature(data, 'AccLocation')
+# data = dpu.removeUnrequiredFeature(data, 'Grevious')
+# data = dpu.removeUnrequiredFeature(data, 'Minor')
 
-#Remove the Accidents location column
-data=data.drop(['AccLocation'],axis=1)
+##### Took these attributes out since the visualization proved that they have skewed values 
+data = dpu.removeUnrequiredFeature(data, 'WeatherCondition')
+data = dpu.removeUnrequiredFeature(data, 'NumAnimalsKilled')
+data = dpu.removeUnrequiredFeature(data, 'VehicleResponsible_3')
+data = dpu.removeUnrequiredFeature(data, 'VehicleResponsible_1')
+data = dpu.removeUnrequiredFeature(data, 'HelpProvidedBy_Ambulance/Petrol Vehicle')
+data = dpu.removeUnrequiredFeature(data, 'HelpProvidedBy_Petrol Vehicle')
+data = dpu.removeUnrequiredFeature(data, 'HelpProvidedBy_Ambulance')
+data = dpu.removeUnrequiredFeature(data, 'IntersectionTypeControl')
+data = dpu.removeUnrequiredFeature(data, 'AccYear')
+data = dpu.removeUnrequiredFeature(data, 'RoadCondition')
+data = dpu.removeUnrequiredFeature(data, 'VehicleResponsible_2')
+data = dpu.removeUnrequiredFeature(data, 'VehicleResponsible_0')
+#data = dpu.removeUnrequiredFeature(data, 'Encoded_AccidentTimeMorningEvening')
+data = dpu.removeUnrequiredFeature(data,'TimeOfAccAMPM_AM')
+data = dpu.removeUnrequiredFeature(data,'TimeOfAccAMPM_PM')
+data = dpu.removeUnrequiredFeature(data, 'Causes')
+data = dpu.removeUnrequiredFeature(data, 'RoadFeature')
+data = dpu.removeUnrequiredFeature(data, 'HourOfAccident')
+#data = dpu.removeUnrequiredFeature(data, 'Injured')
+#data = dpu.removeUnrequiredFeature(data, 'NatureAccident')
 
 # dropping null value columns to avoid errors 
-#data.loc[data['Causes']=='-', 'Causes'] = 'NaN'
-data = data[~data['Causes'].str.contains('-')]
-#data.dropna(inplace = True) 
+#data = data[~data['Causes'].str.contains('-')]
 
-#After run 1 this feature was found to have least impact
-data=data.drop(['Grevious'],axis=1)
-
-#After run 2 this feature was found to have least impact
-data=data.drop(['Minor'],axis=1)
-
-#Y1 =  Y.drop(Y[Y['ClassificationOfAccident']=='-'].index)
-#print (Y1['ClassificationOfAccident'].value_counts())
+print ('Data shape after pre-processing-',data.shape)
 
 data.to_csv('FormattedNHAIAccidentsData.csv')
 
@@ -113,8 +78,7 @@ data.to_csv('FeaturesData.csv')
 ############# Feature Selection#################
 ################################################
 
-print ("**** Model performance before feature selection ******")
-train_x, test_x, train_y, test_y = train_test_split(X,Y,random_state=1)
+train_X, test_x, train_y, test_y = train_test_split(X,Y,random_state=1)
 
 #initialize a Random forest classifier with 
 # 1000 decision trees or estimators
@@ -129,31 +93,25 @@ rf = RandomForestClassifier(n_estimators=1000,
         random_state=1)
 
 #fit the data        
-rf.fit(train_x, train_y)
+rf.fit(train_X, train_y)
 
-#print the feature importance - tbd
-print ('Feature Importance is ',rf.feature_importances_)
+predicted_y_with_train_data = rf.predict(train_X)
+pcp.printClassifierPerformanceOnTrainData(rf, train_X, train_y, predicted_y_with_train_data)
 
-#print the oob-score (out of box features error score)
-print ('Out of box features score is ',rf.oob_score_)
+featuresCount = 1
+while (featuresCount <=18) :
+        rf = RandomForestClassifier(n_estimators=1000,
+                max_depth=10, 
+                max_features='auto', 
+                bootstrap=True,
+                oob_score=True,
+                random_state=1)
 
-#do a prediction on the test X data set
-predicted_y = rf.predict(test_x)
+        #fit the data        
+        rf.fit(train_X, train_y)
 
-#errors = abs(predicted_y-test_y)
-#print ('Mean absolute error (MAE) ', round(np.mean(errors),2))
+        #do a prediction on the test X data set
+        predicted_y_with_test_data = rf.predict(test_x)
+        pcp.printClassifierPerformanceOnTestData(rf, train_X, test_y, predicted_y_with_test_data)
 
-#print the confusion matrix
-confusion_matrix = confusion_matrix(test_y, predicted_y)
-print (confusion_matrix)
-
-print ('Accuracy score is',accuracy_score(test_y, predicted_y))
-
-print ('Recall score is', recall_score(test_y, predicted_y, average='weighted'))
-
-print ('Precision store is', precision_score(test_y, predicted_y, average='weighted'))
-
-print ("F1 score is", f1_score(test_y, predicted_y, average='weighted'))
-
-#print the classification report
-print (classification_report(test_y, predicted_y))
+        featuresCount=featuresCount+1
