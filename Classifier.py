@@ -98,20 +98,17 @@ rf.fit(train_X, train_y)
 predicted_y_with_train_data = rf.predict(train_X)
 pcp.printClassifierPerformanceOnTrainData(rf, train_X, train_y, predicted_y_with_train_data)
 
-featuresCount = 1
-while (featuresCount <=18) :
-        rf = RandomForestClassifier(n_estimators=1000,
-                max_depth=10, 
-                max_features='auto', 
-                bootstrap=True,
-                oob_score=True,
-                random_state=1)
 
-        #fit the data        
-        rf.fit(train_X, train_y)
+rf = RandomForestClassifier(n_estimators=1000,
+        max_depth=10, 
+        max_features='auto', 
+        bootstrap=True,
+        oob_score=True,
+        random_state=1)
 
-        #do a prediction on the test X data set
-        predicted_y_with_test_data = rf.predict(test_x)
-        pcp.printClassifierPerformanceOnTestData(rf, train_X, test_y, predicted_y_with_test_data)
+#fit the data        
+rf.fit(train_X, train_y)
 
-        featuresCount=featuresCount+1
+#do a prediction on the test X data set
+predicted_y_with_test_data = rf.predict(test_x)
+pcp.printClassifierPerformanceOnTestData(rf, train_X, test_y, predicted_y_with_test_data)
